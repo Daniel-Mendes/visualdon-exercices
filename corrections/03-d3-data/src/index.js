@@ -1,11 +1,15 @@
-import * as d3 from 'd3'
+import { json } from 'd3-fetch'
+import { select, selectAll } from 'd3-selection'
+import {max} from "d3-array";
+
+
 
 const postsUrl = 'https://jsonplaceholder.typicode.com/posts'
 const userUrl = 'https://jsonplaceholder.typicode.com/users'
 
 Promise.all([
-    d3.json(postsUrl),
-    d3.json(userUrl)
+    json(postsUrl),
+    json(userUrl)
 ])
     .then(([posts, users]) =>  {
 
@@ -20,6 +24,9 @@ Promise.all([
             return new_object;post
         });
 
+        console.log("Nouvel objet", result1);
+
+
         // 2. Nombre de posts par user
         let result2 = users.map(usr => {
             let posts_filtered = posts.filter(post => post.userId === usr.id)
@@ -31,7 +38,7 @@ Promise.all([
             return new_object;
         })
 
-        const container = d3.select('body')
+        const container = select('body')
             .append('div')
 
         container.selectAll('p')
@@ -40,28 +47,30 @@ Promise.all([
             .append('p')
             .text(d=> "User " + d.userId + ": " + d.nPosts)
 
+        console.log("Nombre de posts par user", result2);
+
+
         // 3. User avec les text le plus long
         let body_length = users.map(usr => {
             let posts_filtered = posts.filter(post => post.userId === usr.id)
             let new_object = {
                 "userId" : usr.id,
-                "body_length" : d3.max(posts_filtered.map(post => post.body.length))
+                "body_length" : max(posts_filtered.map(post => post.body.length))
             }
             return new_object;
         })
 
-        let result3 = body_length.filter(d => d.body_length === d3.max(body_length.map(d2=>d2.body_length)))
+        let result3 = body_length.filter(d => d.body_length === max(body_length.map(d2=>d2.body_length)))
 
-        console.log(result3);
+        console.log("User qui a écrit le texte le plus long", result3);
 
-        const container2 = d3.select('body')
+        const container2 = select('body')
             .append('div')
 
         container2.selectAll('p')
             .data(result3)
-            .enter()
-            .append('p')
-            .text(d=> "User " + d.userId + ": " + d.body_length)
+            .join(enter => enter.append('p').text(d=> "User " + d.userId + ": " + d.body_length)
+            )
 
 
         // Barchart
@@ -69,23 +78,29 @@ Promise.all([
             width = 0.6*window.innerWidth - margin.left - margin.right,
             height = 0.7*window.innerHeight - margin.top - margin.bottom;
 
-        const figure = d3.select("#vizArea")
+        const figure = select("body")
             .append('svg')
             .attr('width', width)
-            .attr('height', height);
-
-       const x = d3.scaleBand().domain(result2.map(d=>d.userName)).range([0,width]).paddingInner(0.05)
-       const y = d3.scaleLinear().domain([0,d3.max(result2.map(d=>d.nPosts))]).range([height,0])
-
+            .attr('height', height + 80);
+        
         figure.selectAll('rect')
             .data(result2)
-            .enter()
-            .append('rect')
-            .attr('width', x.bandwidth())
-            .attr('height', d => height - y(d.nPosts))
-            .attr('x', d => x(d.userName))
-            .attr('y', d => y(d.nPosts))
-            .attr('fill', 'black')
+            .join(enter => enter.append('rect')
+                .attr('width', 30)
+                .attr('height', d => height - d.nPosts)
+                .attr('x', (d, i) => i * 50)
+                .attr('y', d => d.nPosts)
+                .attr('fill', 'black'))
+
+
+        figure.selectAll('text')
+            .data(result2)
+            .join(enter => enter.append('text')
+                .attr('x', (d, i) => i * 50)
+                .attr('y', d => height + 20)
+                .text(d => d.userId))
+
+
 
     });
 
