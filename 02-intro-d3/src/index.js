@@ -1,4 +1,4 @@
-import {select} from "d3-selection";
+import { select } from "d3-selection";
 
 /*
   Créez 3 cercles de 40px de rayon et placez-les respectivement à : (50,50), (150,150), (250,250)
